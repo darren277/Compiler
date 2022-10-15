@@ -50,20 +50,32 @@ def IsDigit(c: chr) -> bool:
     return c.isdigit()
 
 
+# Recognize an alphanumeric.
+def IsAlNum(c: chr) -> bool:
+    return IsAlpha(c) or IsDigit(c)
+
+
+
 # Get an identifier.
-def GetName() -> chr:
+def GetName() -> str:
+    Token: str = ''
     if not IsAlpha(Look): Expected('Name')
-    _GetName = Look.upper()
-    GetChar()
-    return _GetName
+    while IsAlNum(Look):
+        Token += Look.upper()
+        GetChar()
+    return Token
+
 
 
 # Get a number.
-def GetNum() -> chr:
+def GetNum() -> str:
+    Value: str = ''
     if not IsDigit(Look): Expected('Integer')
-    _GetNum = Look
-    GetChar()
-    return _GetNum
+    while IsDigit(Look):
+        Value += Look
+        GetChar()
+    return Value
+
 
 
 # Output a string with tab.

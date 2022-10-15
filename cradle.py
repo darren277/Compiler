@@ -3,9 +3,11 @@
 import sys
 
 #TAB = '^I'
-TAB = ''
+TAB = '\t'
 
 Look: chr
+
+CR = '\r'
 
 
 # Read new character from input stream.
@@ -34,8 +36,11 @@ def Expected(s: str):
 
 # Match a specific input character.
 def Match(x: chr):
-    if Look == x: GetChar()
-    else: Expected(f'"{x}"')
+    if Look != x: Expected(f"'{x}'")
+    else:
+        GetChar()
+        SkipWhite()
+
 
 
 # Recognize an alpha character.
@@ -48,20 +53,47 @@ def IsDigit(c: chr) -> bool:
     return c.isdigit()
 
 
+# Recognize an alphanumeric.
+def IsAlNum(c: chr) -> bool:
+    return IsAlpha(c) or IsDigit(c)
+
+
+
 # Get an identifier.
-def GetName() -> chr:
+def GetName() -> str:
+    Token: str = ''
     if not IsAlpha(Look): Expected('Name')
-    _GetName = Look.upper()
-    GetChar()
+    while IsAlNum(Look):
+        Token += Look.upper()
+        GetChar()
+    _GetName = Token
+    SkipWhite()
     return _GetName
 
 
+
 # Get a number.
-def GetNum() -> chr:
+def GetNum() -> str:
+    Value: str = ''
     if not IsDigit(Look): Expected('Integer')
-    _GetNum = Look
-    GetChar()
+    while IsDigit(Look):
+        Value += Look
+        GetChar()
+    _GetNum = Value
+    SkipWhite()
     return _GetNum
+
+
+
+
+# Recognize white space.
+def IsWhite(c: chr) -> bool:
+    return c in [' ', TAB]
+
+
+# Skip over leading white space.
+def SkipWhite():
+    while IsWhite(Look): GetChar()
 
 
 # Output a string with tab.
@@ -78,6 +110,8 @@ def EmitLn(s: str):
 # Initialize.
 def Init():
     GetChar()
+    SkipWhite()
+
 
 
 
@@ -108,12 +142,23 @@ def Subtract():
     EmitLn('NEG D0')
 
 
+# Parse and translate an identifier.
+def Ident():
+    Name: chr = GetName()
+    if Look == '(':
+        Match('(')
+        Match(')')
+        EmitLn(f'BSR {Name}')
+    else: EmitLn(f'MOVE {Name}(PC),D0')
+
+
 # Parse and translate a math factor.
 def Factor():
     if Look == '(':
         Match('(')
         Expression()
         Match(')')
+    elif IsAlpha(Look): Ident()
     else: EmitLn(f'MOVE #{GetNum()},D0')
 
 
@@ -138,6 +183,15 @@ def IsAddop(c: chr) -> bool:
 
 
 
+# Parse and translate an assignment statement.
+def Assignment():
+    Name: chr = GetName()
+    Match('=')
+    Expression()
+    EmitLn(f'LEA {Name}(PC),A0')
+    EmitLn('MOVE D0,(A0)')
+
+
 
 
 
@@ -158,6 +212,8 @@ def Expression():
 # Main program.
 Init()
 Expression()
+if Look != CR: Expected('Newline')
+
 
 
 

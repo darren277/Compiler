@@ -3,7 +3,7 @@
 import sys
 
 #TAB = '^I'
-TAB = ''
+TAB = '\t'
 
 Look: chr
 
@@ -36,8 +36,11 @@ def Expected(s: str):
 
 # Match a specific input character.
 def Match(x: chr):
-    if Look == x: GetChar()
-    else: Expected(f'"{x}"')
+    if Look != x: Expected(f"'{x}'")
+    else:
+        GetChar()
+        SkipWhite()
+
 
 
 # Recognize an alpha character.
@@ -63,7 +66,9 @@ def GetName() -> str:
     while IsAlNum(Look):
         Token += Look.upper()
         GetChar()
-    return Token
+    _GetName = Token
+    SkipWhite()
+    return _GetName
 
 
 
@@ -74,8 +79,21 @@ def GetNum() -> str:
     while IsDigit(Look):
         Value += Look
         GetChar()
-    return Value
+    _GetNum = Value
+    SkipWhite()
+    return _GetNum
 
+
+
+
+# Recognize white space.
+def IsWhite(c: chr) -> bool:
+    return c in [' ', TAB]
+
+
+# Skip over leading white space.
+def SkipWhite():
+    while IsWhite(Look): GetChar()
 
 
 # Output a string with tab.
@@ -92,6 +110,8 @@ def EmitLn(s: str):
 # Initialize.
 def Init():
     GetChar()
+    SkipWhite()
+
 
 
 

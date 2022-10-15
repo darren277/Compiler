@@ -7,6 +7,8 @@ TAB = ''
 
 Look: chr
 
+CR = '\r'
+
 
 # Read new character from input stream.
 def GetChar() -> chr:
@@ -108,12 +110,23 @@ def Subtract():
     EmitLn('NEG D0')
 
 
+# Parse and translate an identifier.
+def Ident():
+    Name: chr = GetName()
+    if Look == '(':
+        Match('(')
+        Match(')')
+        EmitLn(f'BSR {Name}')
+    else: EmitLn(f'MOVE {Name}(PC),D0')
+
+
 # Parse and translate a math factor.
 def Factor():
     if Look == '(':
         Match('(')
         Expression()
         Match(')')
+    elif IsAlpha(Look): Ident()
     else: EmitLn(f'MOVE #{GetNum()},D0')
 
 
@@ -138,6 +151,15 @@ def IsAddop(c: chr) -> bool:
 
 
 
+# Parse and translate an assignment statement.
+def Assignment():
+    Name: chr = GetName()
+    Match('=')
+    Expression()
+    EmitLn(f'LEA {Name}(PC),A0')
+    EmitLn('MOVE D0,(A0)')
+
+
 
 
 
@@ -158,6 +180,8 @@ def Expression():
 # Main program.
 Init()
 Expression()
+if Look != CR: Expected('Newline')
+
 
 
 

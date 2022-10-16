@@ -244,13 +244,27 @@ def Expression() -> int:
 
 
 
+# Input routine.
+def Input():
+    Match('?')
+    Name: chr = GetName()
+    Table[Name] = int(input('?'))
+
+
+# Output routine.
+def Output():
+    Match('!')
+    print(Table[GetName()])
+
 
 
 
 # Main program.
 Init()
 while Look != '.':
-    Assignment()
+    if Look == '?': Input()
+    elif Look == '!': Output()
+    else: Assignment()
     NewLine()
 
 

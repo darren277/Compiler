@@ -3,11 +3,16 @@
 import sys
 
 #TAB = '^I'
+from typing import Dict
+
 TAB = '\t'
 
 Look: chr
+Table: Dict[chr, int] = dict()
+
 
 CR = '\r'
+LF = '\n'
 
 
 # Read new character from input stream.
@@ -73,16 +78,28 @@ def GetName() -> str:
 
 
 # Get a number.
-def GetNum() -> str:
-    Value: str = ''
+def GetNum() -> int:
+    Value: int = 0
     if not IsDigit(Look): Expected('Integer')
     while IsDigit(Look):
-        Value += Look
+        Value = 10 * Value + ord(Look) - ord('0')
         GetChar()
-    _GetNum = Value
-    SkipWhite()
-    return _GetNum
+    return Value
 
+
+
+# Parse and translate an assignment statement.
+def Assignment():
+    Name: chr = GetName()
+    Match('=')
+    Table[Name] = Expression()
+
+
+# Recognize and skip over a newline.
+def NewLine():
+    if Look == CR:
+        GetChar()
+        if Look == LF: GetChar()
 
 
 
@@ -109,23 +126,34 @@ def EmitLn(s: str):
 
 # Initialize.
 def Init():
+    InitTable()
     GetChar()
     SkipWhite()
 
 
 
 
+# Initialize the variable area.
+def InitTable():
+    i: chr
+    for i in range(ord('A'), ord('Z') + 1):
+        Table[chr(i)] = 0
 
 
 
-# Parse and translate a math expression.
-def Term():
-    Factor()
+
+# Parse and translate a math term.
+def Term() -> int:
+    Value: int = GetNum()
     while Look in ['*', '/']:
-        EmitLn('MOVE D0,-(SP)')
-        if Look == '*': Multiply()
-        elif Look == '/': Divide()
+        if Look == '*':
+            Match('*')
+            Value *= GetNum()
+        elif Look == '/':
+            Match('/')
+            Value /= GetNum()
         else: Expected('Mulop')
+    return Value
 
 
 # Recognize and translate an add.
@@ -153,13 +181,16 @@ def Ident():
 
 
 # Parse and translate a math factor.
-def Factor():
+def Factor() -> int:
+    _Factor: int = 0
     if Look == '(':
         Match('(')
-        Expression()
+        _Factor = Expression()
         Match(')')
-    elif IsAlpha(Look): Ident()
-    else: EmitLn(f'MOVE #{GetNum()},D0')
+    elif IsAlpha(Look): _Factor = Table[GetName()]
+    else: _Factor = GetNum()
+    return _Factor
+
 
 
 # Recognize and translate a multiply.
@@ -196,23 +227,45 @@ def Assignment():
 
 
 # Parse and translate a math expression.
-def Expression():
-    if IsAddop(Look): EmitLn('CLR D0')
-    else: Term()
+def Expression() -> int:
+    Value: int
+    if IsAddop(Look): Value = 0
+    else: Value = GetNum()
     while IsAddop(Look):
         EmitLn('MOVE D0,-(SP)')
-        if Look == '+': Add()
-        elif Look == '-': Subtract()
+        if Look == '+':
+            Match('+')
+            Value += GetNum()
+        elif Look == '-':
+            Match('-')
+            Value -= GetNum()
         else: Expected('Addop')
+    return Value
 
+
+
+# Input routine.
+def Input():
+    Match('?')
+    Name: chr = GetName()
+    Table[Name] = int(input('?'))
+
+
+# Output routine.
+def Output():
+    Match('!')
+    print(Table[GetName()])
 
 
 
 
 # Main program.
 Init()
-Expression()
-if Look != CR: Expected('Newline')
+while Look != '.':
+    if Look == '?': Input()
+    elif Look == '!': Output()
+    else: Assignment()
+    NewLine()
 
 
 

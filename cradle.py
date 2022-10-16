@@ -73,15 +73,15 @@ def GetName() -> str:
 
 
 # Get a number.
-def GetNum() -> str:
-    Value: str = ''
+def GetNum() -> int:
+    Value: int = 0
     if not IsDigit(Look): Expected('Integer')
     while IsDigit(Look):
-        Value += Look
+        Value = 10 * Value + ord(Look) - ord('0')
         GetChar()
-    _GetNum = Value
-    SkipWhite()
-    return _GetNum
+    return Value
+
+
 
 
 
@@ -118,14 +118,18 @@ def Init():
 
 
 
-# Parse and translate a math expression.
-def Term():
-    Factor()
+# Parse and translate a math term.
+def Term() -> int:
+    Value: int = GetNum()
     while Look in ['*', '/']:
-        EmitLn('MOVE D0,-(SP)')
-        if Look == '*': Multiply()
-        elif Look == '/': Divide()
+        if Look == '*':
+            Match('*')
+            Value *= GetNum()
+        elif Look == '/':
+            Match('/')
+            Value /= GetNum()
         else: Expected('Mulop')
+    return Value
 
 
 # Recognize and translate an add.
@@ -153,13 +157,15 @@ def Ident():
 
 
 # Parse and translate a math factor.
-def Factor():
+def Factor() -> int:
+    _Factor: int = 0
     if Look == '(':
         Match('(')
-        Expression()
+        _Factor = Expression()
         Match(')')
-    elif IsAlpha(Look): Ident()
-    else: EmitLn(f'MOVE #{GetNum()},D0')
+    else: _Factor = GetNum()
+    return _Factor
+
 
 
 # Recognize and translate a multiply.
@@ -196,14 +202,21 @@ def Assignment():
 
 
 # Parse and translate a math expression.
-def Expression():
-    if IsAddop(Look): EmitLn('CLR D0')
-    else: Term()
+def Expression() -> int:
+    Value: int
+    if IsAddop(Look): Value = 0
+    else: Value = GetNum()
     while IsAddop(Look):
         EmitLn('MOVE D0,-(SP)')
-        if Look == '+': Add()
-        elif Look == '-': Subtract()
+        if Look == '+':
+            Match('+')
+            Value += GetNum()
+        elif Look == '-':
+            Match('-')
+            Value -= GetNum()
         else: Expected('Addop')
+    return Value
+
 
 
 
@@ -211,7 +224,8 @@ def Expression():
 
 # Main program.
 Init()
-Expression()
+#Expression()
+print(Expression())
 if Look != CR: Expected('Newline')
 
 

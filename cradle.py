@@ -3,11 +3,16 @@
 import sys
 
 #TAB = '^I'
+from typing import Dict
+
 TAB = '\t'
 
 Look: chr
+Table: Dict[chr, int] = dict()
+
 
 CR = '\r'
+LF = '\n'
 
 
 # Read new character from input stream.
@@ -83,6 +88,18 @@ def GetNum() -> int:
 
 
 
+# Parse and translate an assignment statement.
+def Assignment():
+    Name: chr = GetName()
+    Match('=')
+    Table[Name] = Expression()
+
+
+# Recognize and skip over a newline.
+def NewLine():
+    if Look == CR:
+        GetChar()
+        if Look == LF: GetChar()
 
 
 
@@ -109,11 +126,18 @@ def EmitLn(s: str):
 
 # Initialize.
 def Init():
+    InitTable()
     GetChar()
     SkipWhite()
 
 
 
+
+# Initialize the variable area.
+def InitTable():
+    i: chr
+    for i in range(ord('A'), ord('Z') + 1):
+        Table[chr(i)] = 0
 
 
 
@@ -163,6 +187,7 @@ def Factor() -> int:
         Match('(')
         _Factor = Expression()
         Match(')')
+    elif IsAlpha(Look): _Factor = Table[GetName()]
     else: _Factor = GetNum()
     return _Factor
 
@@ -224,9 +249,9 @@ def Expression() -> int:
 
 # Main program.
 Init()
-#Expression()
-print(Expression())
-if Look != CR: Expected('Newline')
+while Look != '.':
+    Assignment()
+    NewLine()
 
 
 
